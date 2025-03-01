@@ -13,6 +13,7 @@ AUTHORIZED_KEYS_URL="${CONFIG_BASE_URL}authorized_keys"
 SSHD_CONFIG_DIR="/etc/ssh/sshd_config.d"
 PROFILE_D_EDITOR="/etc/profile.d/editor.sh"
 NEW_HOSTNAME="centos-appliance"
+GDM_CUSTOM_CONF="/etc/gdm/custom.conf"
 
 # Function to handle errors
 handle_error() {
@@ -112,6 +113,32 @@ authselect apply-changes || handle_error "Applying authselect changes"
 # Change default firewall zone to 'home'
 firewall-cmd --set-default-zone=home || handle_error "Setting default firewall zone to home"
 firewall-cmd --runtime-to-permanent || handle_error "Making firewall changes permanent"
+
+# Configure automatic login for kiosk user
+if ! grep -q "AutomaticLoginEnable=True" "$GDM_CUSTOM_CONF"; then
+  # Ensure the lines are added under [daemon] section
+  sed -i '/^\[daemon\]/a AutomaticLoginEnable=True\nAutomaticLogin=kiosk' "$GDM_CUSTOM_CONF" || handle_error "Configuring automatic login for kiosk user"
+fi
+
+# Setup first-login script to run commands on first login
+FIRST_LOGIN_SCRIPT="/home/$USER_NAME/first-login.sh"
+if [ ! -f "$FIRST_LOGIN_SCRIPT" ]; then
+  cat << 'EOF' > "$FIRST_LOGIN_SCRIPT"
+#!/bin/bash
+gnome-extensions enable dash-to-dock@micxgx.gmail.com
+gsettings set org.gnome.shell.extensions.dash-to-dock disable-overview-on-startup true
+touch "$HOME/.first_login_done"
+EOF
+  chmod +x "$FIRST_LOGIN_SCRIPT"
+fi
+
+# Ensure the first-login.sh script runs only once on first login
+BASH_PROFILE="/home/$USER_NAME/.bash_profile"
+if ! grep -q "$FIRST_LOGIN_SCRIPT" "$BASH_PROFILE"; then
+  echo "if [ ! -f ~/.first_login_done ]; then" >> "$BASH_PROFILE"
+  echo "  bash $FIRST_LOGIN_SCRIPT" >> "$BASH_PROFILE"
+  echo "fi" >> "$BASH_PROFILE"
+fi
 
 # Cleanup
 dnf clean all || handle_error "Cleaning up dnf cache"
