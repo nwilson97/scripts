@@ -20,6 +20,9 @@ handle_error() {
   exit 1
 }
 
+# Install epel-release first and ensure it is successful
+dnf install -y epel-release || handle_error "Installing epel-release"
+
 # Set hostname and restart Avahi if needed
 CURRENT_HOSTNAME=$(hostname)
 if [ "$CURRENT_HOSTNAME" != "$NEW_HOSTNAME" ]; then
@@ -96,7 +99,7 @@ echo 'export VISUAL=vim' >> "$PROFILE_D_EDITOR" || handle_error "Setting VISUAL 
 chmod 644 "$PROFILE_D_EDITOR" || handle_error "Setting permissions for profile editor script"
 
 # Install additional software
-dnf install -y epel-release dconf-editor gnome-extensions-app gnome-shell-extension-dash-to-dock nss-mdns || handle_error "Installing additional software"
+dnf install -y dconf-editor gnome-extensions-app gnome-shell-extension-dash-to-dock nss-mdns || handle_error "Installing additional software"
 
 # Install Google Chrome
 dnf -y install https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm || handle_error "Installing Google Chrome"
