@@ -11,13 +11,10 @@ if ! id "nick" &>/dev/null; then
     exit 1
 fi
 
-# Ensure epel-release is installed first
-echo "Installing epel-release..."
-dnf -y install epel-release && dnf makecache
-
 # Install required packages
 echo "Installing required packages..."
-dnf -y install vim-enhanced dconf-editor gnome-extensions-app gnome-shell-extension-dash-to-dock nss-mdns
+dnf -y install epel-release && dnf makecache
+dnf -y install vim-enhanced dconf-editor gnome-extensions-app gnome-shell-extension-dash-to-dock nss-mdns dnf-automatic
 
 echo "Installing Google Chrome..."
 dnf -y install https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
