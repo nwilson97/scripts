@@ -11,6 +11,7 @@ VIMRC_URL="${CONFIG_BASE_URL}.vimrc"
 SSHD_CONFIG_URL="${CONFIG_BASE_URL}sshd_secure.conf"
 AUTHORIZED_KEYS_URL="${CONFIG_BASE_URL}authorized_keys"
 SSHD_CONFIG_DIR="/etc/ssh/sshd_config.d"
+PROFILE_D_EDITOR="/etc/profile.d/editor.sh"
 
 # Create unprivileged user with no password
 useradd -m -s /bin/bash "$USER_NAME"
@@ -40,8 +41,14 @@ systemctl restart sshd
 dnf install -y dnf-automatic
 systemctl enable --now dnf-automatic.timer
 
-# Swap nano-default-editor for vim-default-editor
-dnf swap -y nano-default-editor vim-default-editor
+# Remove nano and install vim-enhanced
+dnf remove -y nano
+dnf install -y vim-enhanced
+
+# Set vim as the default system-wide editor
+echo 'export EDITOR=vim' > "$PROFILE_D_EDITOR"
+echo 'export VISUAL=vim' >> "$PROFILE_D_EDITOR"
+chmod 644 "$PROFILE_D_EDITOR"
 
 # Install additional software: dconf-editor, gnome-extensions, gnome-tweaks, Google Chrome
 dnf install -y dconf-editor gnome-extensions gnome-tweaks
