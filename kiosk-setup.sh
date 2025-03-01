@@ -66,9 +66,10 @@ systemctl restart sshd
 
 # Configure firewall if needed
 if [[ $(firewall-cmd --get-default-zone) != "home" ]]; then
-    firewall-cmd --set-default-zone=home --permanent
-    firewall-cmd --reload
+    firewall-cmd --set-default-zone=home
+    firewall-cmd --runtime-to-permanent
 fi
+
 
 # Configure authselect for mdns
 if ! authselect current | grep -q "with-mdns"; then
