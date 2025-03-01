@@ -50,9 +50,12 @@ echo 'export EDITOR=vim' > "$PROFILE_D_EDITOR"
 echo 'export VISUAL=vim' >> "$PROFILE_D_EDITOR"
 chmod 644 "$PROFILE_D_EDITOR"
 
-# Install additional software: dconf-editor, gnome-extensions-app, gnome-tweaks, Google Chrome
-dnf install -y dconf-editor gnome-extensions-app gnome-tweaks
+# Install additional software: dconf-editor, gnome-extensions-app, gnome-tweaks, gnome-shell-extension-dash-to-dock, Google Chrome
+dnf install -y dconf-editor gnome-extensions-app gnome-tweaks gnome-shell-extension-dash-to-dock
 dnf -y install https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+
+# Refresh GNOME extensions list without rebooting
+gnome-extensions list | xargs -I {} gnome-extensions enable {}
 
 # Cleanup
 dnf clean all
