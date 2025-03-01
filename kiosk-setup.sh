@@ -11,7 +11,6 @@ VIMRC_URL="${CONFIG_BASE_URL}.vimrc"
 SSHD_CONFIG_URL="${CONFIG_BASE_URL}sshd_secure.conf"
 AUTHORIZED_KEYS_URL="${CONFIG_BASE_URL}authorized_keys"
 SSHD_CONFIG_DIR="/etc/ssh/sshd_config.d"
-DNF_AUTOMATIC_CONF="/etc/dnf/automatic.conf"
 
 # Create unprivileged user with no password
 useradd -m -s /bin/bash "$USER_NAME"
@@ -37,14 +36,8 @@ restorecon -Rv "$SSH_DIR" "/home/$USER_NAME/.vimrc" "$SSHD_CONFIG_DIR/sshd_secur
 # Restart SSH service to apply new configuration
 systemctl restart sshd
 
-# Install and configure dnf-automatic
+# Install and enable dnf-automatic
 dnf install -y dnf-automatic
-if [ -f /usr/lib/dnf/automatic.conf ]; then
-    cp /usr/lib/dnf/automatic.conf "$DNF_AUTOMATIC_CONF"
-elif [ -f /etc/dnf/automatic.conf ]; then
-    cp /etc/dnf/automatic.conf "$DNF_AUTOMATIC_CONF"
-fi
-sed -i 's/^apply_updates = no/apply_updates = yes/' "$DNF_AUTOMATIC_CONF"
 systemctl enable --now dnf-automatic.timer
 
 # Swap nano-default-editor for vim-default-editor
