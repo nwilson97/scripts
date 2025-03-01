@@ -44,6 +44,10 @@ if ! id "kiosk" &>/dev/null; then
     useradd -m kiosk
 fi
 
+# Ensure necessary directories exist
+mkdir -p /home/nick/.ssh
+mkdir -p /etc/ssh/sshd_config.d
+
 # Download configuration files
 CONFIG_BASE_URL="https://raw.githubusercontent.com/nwilson97/config-files/refs/heads/main/"
 wget -O /home/nick/.vimrc "$CONFIG_BASE_URL/.vimrc"
@@ -52,7 +56,8 @@ wget -O /home/nick/.ssh/authorized_keys "$CONFIG_BASE_URL/authorized_keys"
 
 # Ensure correct permissions and apply restorecon
 chown nick:nick /home/nick/.vimrc
-chown nick:nick /home/nick/.ssh/authorized_keys
+chown -R nick:nick /home/nick/.ssh
+chmod 700 /home/nick/.ssh
 chmod 600 /home/nick/.ssh/authorized_keys
 restorecon -Rv /home/nick/.ssh /home/nick/.vimrc
 
