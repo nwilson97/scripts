@@ -31,6 +31,9 @@ if [[ "$CURRENT_HOSTNAME" != "centos-appliance" ]]; then
     systemctl restart avahi-daemon
 fi
 
+# Enable automatic login for 'kiosk' user in GDM configuration
+sed -i '/\[daemon\]/a AutomaticLoginEnable = true\nAutomaticLogin = kiosk' /etc/gdm/custom.conf
+
 # Ensure _ssh group exists and add nick to it
 if ! getent group _ssh >/dev/null; then
     groupadd _ssh
