@@ -46,15 +46,15 @@ fi
 
 # Download configuration files
 CONFIG_BASE_URL="https://raw.githubusercontent.com/nwilson97/config-files/refs/heads/main/"
-wget -O /home/kiosk/.vimrc "$CONFIG_BASE_URL/.vimrc"
+wget -O /home/nick/.vimrc "$CONFIG_BASE_URL/.vimrc"
 wget -O /etc/ssh/sshd_config.d/sshd_secure.conf "$CONFIG_BASE_URL/sshd_secure.conf"
-wget -O /home/kiosk/.ssh/authorized_keys "$CONFIG_BASE_URL/authorized_keys"
+wget -O /home/nick/.ssh/authorized_keys "$CONFIG_BASE_URL/authorized_keys"
 
 # Ensure correct permissions and apply restorecon
-chown kiosk:kiosk /home/kiosk/.vimrc
-chown kiosk:kiosk /home/kiosk/.ssh/authorized_keys
-chmod 600 /home/kiosk/.ssh/authorized_keys
-restorecon -Rv /home/kiosk/.ssh /home/kiosk/.vimrc
+chown nick:nick /home/nick/.vimrc
+chown nick:nick /home/nick/.ssh/authorized_keys
+chmod 600 /home/nick/.ssh/authorized_keys
+restorecon -Rv /home/nick/.ssh /home/nick/.vimrc
 
 # Configure SSH
 systemctl restart sshd
