@@ -11,9 +11,12 @@ if ! id "nick" &>/dev/null; then
     exit 1
 fi
 
+# Ensure epel-release is installed first
+echo "Installing epel-release..."
+dnf -y install epel-release && dnf makecache
+
 # Install required packages
 echo "Installing required packages..."
-dnf -y install epel-release && dnf makecache
 dnf -y install vim-enhanced dconf-editor gnome-extensions-app gnome-shell-extension-dash-to-dock nss-mdns dnf-automatic
 
 echo "Installing Google Chrome..."
@@ -36,9 +39,9 @@ if ! groups nick | grep -q '\b_ssh\b'; then
     usermod -aG _ssh nick
 fi
 
-# Ensure kiosk user exists
+# Ensure kiosk user exists as an unprivileged user
 if ! id "kiosk" &>/dev/null; then
-    useradd -m kiosk
+    useradd -m -s /sbin/nologin kiosk
 fi
 
 # Ensure necessary directories exist
@@ -66,7 +69,6 @@ if [[ $(firewall-cmd --get-default-zone) != "home" ]]; then
     firewall-cmd --set-default-zone=home
     firewall-cmd --runtime-to-permanent
 fi
-
 
 # Configure authselect for mdns
 if ! authselect current | grep -q "with-mdns"; then
