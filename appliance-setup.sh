@@ -10,7 +10,7 @@ echo "Starting appliance setup..."
 
 # Install packages
 install_packages() {
-    dnf upgrade -y || { echo "Failed to upgrade system"; exit 1; }
+    dnf --refresh -y upgrade || { echo "Failed to upgrade system"; exit 1; }
     dnf -y install epel-release && /usr/bin/crb enable || { echo "Failed to install epel-release"; exit 1; }
     dnf -y swap nano vim-enhanced || { echo "Failed to swap nano for vim-enhanced"; exit 1; }
     dnf -y install dnf-automatic \
@@ -21,7 +21,16 @@ install_packages() {
 install_packages
 
 # Install Google Chrome
-dnf -y install https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm || { echo "Failed to install Google Chrome"; exit 1; }
+cat > /etc/yum.repos.d/google-chrome.repo << EOF
+[google-chrome]
+name=google-chrome
+baseurl=http://dl.google.com/linux/chrome/rpm/stable/x86_64
+enabled=1
+gpgcheck=1
+gpgkey=https://dl.google.com/linux/linux_signing_key.pub
+EOF
+
+dnf -y install google-chrome-stable || { echo "Failed to install Google Chrome"; exit 1; }
 
 # Set vim as default editor by adding to /etc/profile.d/vim.sh
 echo -e 'export VISUAL=vim\nexport EDITOR=vim' > /etc/profile.d/vim.sh
@@ -57,19 +66,24 @@ chown root:root /etc/systemd/system/poweroff-at-9pm.* || { echo "Failed to set o
 chmod 600 /home/nick/.ssh/authorized_keys || { echo "Failed to set permissions for authorized_keys"; exit 1; }
 chown -R nick:nick /home/nick/.ssh || { echo "Failed to set ownership for .ssh directory"; exit 1; }
 
-# Enable the poweroff timer
+# Enable timers
 systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 systemctl enable poweroff-at-9pm.timer || { echo "Failed to enable poweroff timer"; exit 1; }
-
-# Enable dnf-automatic if installed
-if rpm -q dnf-automatic &>/dev/null; then
-    systemctl enable dnf-automatic.timer || { echo "Failed to enable dnf-automatic.timer"; exit 1; }
+systemctl enable dnf-automatic.timer || { echo "Failed to enable dnf-automatic.timer"; exit 1; }
 fi
 
 # Create 'kiosk' user with home directory and group if it doesn't exist
 if ! id kiosk &>/dev/null; then
     useradd kiosk || { echo "Failed to create kiosk user"; exit 1; }
     passwd -d kiosk || { echo "Failed to delete kiosk user password"; exit 1; }
+fi
+
+# Set 'kiosk' as the auto-login user for GDM
+GDM_CONF="/etc/gdm/custom.conf"
+if grep -q "^\[daemon\]" "$GDM_CONF"; then
+    sed -i '/^\[daemon\]/a AutomaticLoginEnable=True\nAutomaticLogin=kiosk' "$GDM_CONF" || { echo "Failed to modify GDM configuration"; exit 1; }
+else
+    echo -e "[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=kiosk" >> "$GDM_CONF" || { echo "Failed to write GDM configuration"; exit 1; }
 fi
 
 # Create '_ssh' group and add 'nick'
@@ -106,14 +120,6 @@ firewall-cmd --runtime-to-permanent || { echo "Failed to apply firewall changes"
 # Set hostname and restart Avahi
 hostnamectl set-hostname centos-appliance || { echo "Failed to set hostname"; exit 1; }
 systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
-
-# Set 'kiosk' as the auto-login user for GDM
-GDM_CONF="/etc/gdm/custom.conf"
-if grep -q "^\[daemon\]" "$GDM_CONF"; then
-    sed -i '/^\[daemon\]/a AutomaticLoginEnable=True\nAutomaticLogin=kiosk' "$GDM_CONF" || { echo "Failed to modify GDM configuration"; exit 1; }
-else
-    echo -e "[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=kiosk" >> "$GDM_CONF" || { echo "Failed to write GDM configuration"; exit 1; }
-fi
 
 # First login tasks for 'kiosk' using /etc/skel
 SKEL_DIR="/etc/skel"
