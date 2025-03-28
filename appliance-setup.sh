@@ -70,7 +70,6 @@ chown -R nick:nick /home/nick/.ssh || { echo "Failed to set ownership for .ssh d
 systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 systemctl enable poweroff-at-9pm.timer || { echo "Failed to enable poweroff timer"; exit 1; }
 systemctl enable dnf-automatic.timer || { echo "Failed to enable dnf-automatic.timer"; exit 1; }
-fi
 
 # Create 'kiosk' user with home directory and group if it doesn't exist
 if ! id kiosk &>/dev/null; then
