@@ -96,6 +96,7 @@ if [ ! -d /home/nick/.ssh ]; then
     chown nick:nick /home/nick/.ssh || { echo "Failed to set ownership for .ssh directory"; exit 1; }
 fi
 
+: <<'EOF'
 # Configure mDNS with authselect
 configure_mdns() {
     if authselect check &>/dev/null; then
@@ -111,6 +112,7 @@ configure_mdns() {
 if ! configure_mdns; then
     echo "mDNS configuration failed"; exit 1
 fi
+EOF
 
 # Change firewall zone to home
 firewall-cmd --set-default-zone=home || { echo "Failed to set default firewall zone"; exit 1; }
