@@ -101,6 +101,7 @@ firewall-cmd --runtime-to-permanent || { echo "Failed to apply firewall changes"
 hostnamectl set-hostname centos-appliance || { echo "Failed to set hostname"; exit 1; }
 systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
 
+: <<'EOF'
 # Set 'kiosk' as the auto-login user for GDM
 GDM_CONF="/etc/gdm/custom.conf"
 if grep -q "^\[daemon\]" "$GDM_CONF"; then
@@ -125,5 +126,6 @@ fi
 
 # Ensure proper permissions for /etc/skel
 chmod -R o+rX "$SKEL_DIR/.config" || { echo "Failed to set permissions for /etc/skel"; exit 1; }
+EOF
 
 echo "Appliance setup complete."
