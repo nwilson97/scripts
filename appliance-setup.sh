@@ -71,6 +71,23 @@ systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
 systemctl enable poweroff-at-9pm.timer || { echo "Failed to enable poweroff timer"; exit 1; }
 systemctl enable dnf-automatic.timer || { echo "Failed to enable dnf-automatic.timer"; exit 1; }
 
+# First login tasks for 'kiosk' using /etc/skel
+SKEL_DIR="/etc/skel"
+
+# Ensure the .config/autostart directory exists in /etc/skel
+mkdir -p "$SKEL_DIR/.config/autostart" || { echo "Failed to create autostart directory in /etc/skel"; exit 1; }
+
+# Create Google Chrome desktop entry for autostart if it doesn't exist
+if [ -f /usr/share/applications/google-chrome.desktop ]; then
+    cp /usr/share/applications/google-chrome.desktop "$SKEL_DIR/.config/autostart/" || { echo "Failed to copy Google Chrome desktop entry"; exit 1; }
+    
+    # Append desired parameters to the first "Exec" line in the desktop entry
+    sed -i '/^Exec=/{s|$| --incognito --start-fullscreen "ows.openeye.net/login"|}' "$SKEL_DIR/.config/autostart/google-chrome.desktop" || { echo "Failed to modify desktop entry"; exit 1; }
+fi
+
+# Ensure proper permissions for /etc/skel
+chmod -R o+rX "$SKEL_DIR/.config" || { echo "Failed to set permissions for /etc/skel"; exit 1; }
+
 # Create 'kiosk' user with home directory and group if it doesn't exist
 if ! id kiosk &>/dev/null; then
     useradd kiosk || { echo "Failed to create kiosk user"; exit 1; }
@@ -121,22 +138,5 @@ firewall-cmd --runtime-to-permanent || { echo "Failed to apply firewall changes"
 # Set hostname and restart Avahi
 hostnamectl set-hostname centos-appliance || { echo "Failed to set hostname"; exit 1; }
 systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
-
-# First login tasks for 'kiosk' using /etc/skel
-SKEL_DIR="/etc/skel"
-
-# Ensure the .config/autostart directory exists in /etc/skel
-mkdir -p "$SKEL_DIR/.config/autostart" || { echo "Failed to create autostart directory in /etc/skel"; exit 1; }
-
-# Create Google Chrome desktop entry for autostart if it doesn't exist
-if [ -f /usr/share/applications/google-chrome.desktop ]; then
-    cp /usr/share/applications/google-chrome.desktop "$SKEL_DIR/.config/autostart/" || { echo "Failed to copy Google Chrome desktop entry"; exit 1; }
-    
-    # Append desired parameters to the first "Exec" line in the desktop entry
-    sed -i '/^Exec=/{s|$| --incognito --start-fullscreen "ows.openeye.net/login"|}' "$SKEL_DIR/.config/autostart/google-chrome.desktop" || { echo "Failed to modify desktop entry"; exit 1; }
-fi
-
-# Ensure proper permissions for /etc/skel
-chmod -R o+rX "$SKEL_DIR/.config" || { echo "Failed to set permissions for /etc/skel"; exit 1; }
 
 echo "Appliance setup complete."
