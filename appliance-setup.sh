@@ -10,18 +10,18 @@ echo "Starting appliance setup..."
 
 # Install packages
 install_packages() {
-    dnf upgrade -y || { echo "Failed to upgrade system"; exit 1; }
-    dnf -y install epel-release || { echo "Failed to install epel-release"; exit 1; }
+    dnf upgrade --refresh -y || { echo "Failed to upgrade system"; exit 1; }
+    dnf -y install epel-release && /usr/bin/crb enable || { echo "Failed to install epel-release"; exit 1; }
     dnf -y swap nano vim-enhanced || { echo "Failed to swap nano for vim-enhanced"; exit 1; }
     dnf -y install dnf-automatic \
-                   dconf-editor gnome-extensions-app gnome-shell-extension-dash-to-dock \
+                   dconf-editor gnome-tweaks gnome-extensions-app gnome-shell-extension-no-overview.noarch \
                    nss-mdns || { echo "Failed to install required packages"; exit 1; }
 }
 
 install_packages
 
 # Install Google Chrome
-dnf -y install https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm || { echo "Failed to install Google Chrome"; exit 1; }
+dnf -y install "https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm" || { echo "Failed to install Google Chrome"; exit 1; }
 
 # Set vim as default editor by adding to /etc/profile.d/vim.sh
 echo -e 'export VISUAL=vim\nexport EDITOR=vim' > /etc/profile.d/vim.sh
