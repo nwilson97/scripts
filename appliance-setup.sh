@@ -13,7 +13,7 @@ dnf upgrade -y
 dnf -y install epel-release
 dnf -y swap nano vim-enhanced
 dnf -y install dnf-automatic \
-               dconf-editor gnome-extensions-app gnome-shell-extension-dash-to-dock \
+               dconf-editor gnome-extensions-app gnome-shell-extension-no-overview \
                nss-mdns
 
 # Install Google Chrome
