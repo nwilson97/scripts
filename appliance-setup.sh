@@ -28,6 +28,7 @@ download_file() {
 # List of files to download
 download_file "/etc/yum.repos.d/google-chrome.repo" "$CONFIG_REPO/google-chrome.repo"
 download_file "/etc/mdns.allow" "$CONFIG_REPO/mdns.allow"
+download_file "/etc/dconf/db/local.d/00-extensions" "$CONFIG_REPO/00-extensions"
 download_file "/etc/systemd/system/poweroff-at-9pm.timer" "$CONFIG_REPO/poweroff-at-9pm.timer"
 download_file "/etc/systemd/system/poweroff-at-9pm.service" "$CONFIG_REPO/poweroff-at-9pm.service"
 download_file "/home/nick/.vimrc" "$CONFIG_REPO/.vimrc"
@@ -44,9 +45,9 @@ chown -R nick:nick /home/nick/.ssh || { echo "Failed to set ownership for .ssh d
 
 # Install packages
 install_packages() {
-    dnf --refresh -y upgrade || { echo "Failed to upgrade system"; exit 1; }
     dnf config-manager --set-enabled crb
     dnf -y install epel-release epel-next-release || { echo "Failed to install epel-release"; exit 1; }
+    dnf --refresh -y upgrade || { echo "Failed to upgrade system"; exit 1; }
     dnf -y swap nano vim-enhanced || { echo "Failed to swap nano for vim-enhanced"; exit 1; }
     dnf -y install dnf-automatic \
                    dconf-editor gnome-tweaks gnome-extensions-app gnome-shell-extension-no-overview \
@@ -57,6 +58,9 @@ install_packages
 
 # Install Google Chrome
 dnf -y install google-chrome-stable || { echo "Failed to install Google Chrome"; exit 1; }
+
+# Enforce shell extension no-overveiew for all users
+dconf update
 
 # Set vim as default editor by adding to /etc/profile.d/vim.sh
 echo -e 'export VISUAL=vim\nexport EDITOR=vim' > /etc/profile.d/vim.sh
