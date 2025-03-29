@@ -8,34 +8,6 @@ exec > >(tee -a "$LOGFILE") 2>&1
 
 echo "Starting appliance setup..."
 
-# Install packages
-install_packages() {
-    dnf --refresh -y upgrade || { echo "Failed to upgrade system"; exit 1; }
-    dnf -y install epel-release && /usr/bin/crb enable || { echo "Failed to install epel-release"; exit 1; }
-    dnf -y swap nano vim-enhanced || { echo "Failed to swap nano for vim-enhanced"; exit 1; }
-    dnf -y install dnf-automatic \
-                   dconf-editor gnome-tweaks gnome-extensions-app gnome-shell-extension-no-overview \
-                   nss-mdns || { echo "Failed to install required packages"; exit 1; }
-}
-
-install_packages
-
-# Install Google Chrome
-cat > /etc/yum.repos.d/google-chrome.repo << EOF
-[google-chrome]
-name=google-chrome
-baseurl=http://dl.google.com/linux/chrome/rpm/stable/x86_64
-enabled=1
-gpgcheck=1
-gpgkey=https://dl.google.com/linux/linux_signing_key.pub
-EOF
-
-dnf -y install google-chrome-stable || { echo "Failed to install Google Chrome"; exit 1; }
-
-# Set vim as default editor by adding to /etc/profile.d/vim.sh
-echo -e 'export VISUAL=vim\nexport EDITOR=vim' > /etc/profile.d/vim.sh
-chmod +x /etc/profile.d/vim.sh || { echo "Failed to set vim as default editor"; exit 1; }
-
 # Download all necessary files
 CONFIG_REPO="https://raw.githubusercontent.com/nwilson97/config-files/main"
 
@@ -54,17 +26,41 @@ download_file() {
 }
 
 # List of files to download
+download_file "/etc/yum.repos.d/google-chrome.repo" "$CONFIG_REPO/google-chrome.repo"
+download_file "/etc/mdns.allow" "$CONFIG_REPO/mdns.allow"
 download_file "/etc/systemd/system/poweroff-at-9pm.timer" "$CONFIG_REPO/poweroff-at-9pm.timer"
 download_file "/etc/systemd/system/poweroff-at-9pm.service" "$CONFIG_REPO/poweroff-at-9pm.service"
 download_file "/home/nick/.vimrc" "$CONFIG_REPO/.vimrc"
 download_file "/etc/ssh/sshd_config.d/sshd_secure.conf" "$CONFIG_REPO/sshd_secure.conf"
 download_file "/home/nick/.ssh/authorized_keys" "$CONFIG_REPO/authorized_keys"
 
+: <<'EOF'
 # Set permissions and ownership for downloaded files
 chmod 644 /etc/systemd/system/poweroff-at-9pm.* || { echo "Failed to set permissions for poweroff timer"; exit 1; }
 chown root:root /etc/systemd/system/poweroff-at-9pm.* || { echo "Failed to set ownership for poweroff timer"; exit 1; }
+EOF
 chmod 600 /home/nick/.ssh/authorized_keys || { echo "Failed to set permissions for authorized_keys"; exit 1; }
 chown -R nick:nick /home/nick/.ssh || { echo "Failed to set ownership for .ssh directory"; exit 1; }
+
+# Install packages
+install_packages() {
+    dnf --refresh -y upgrade || { echo "Failed to upgrade system"; exit 1; }
+    dnf config-manager --set-enabled crb
+    dnf -y install epel-release epel-next-release || { echo "Failed to install epel-release"; exit 1; }
+    dnf -y swap nano vim-enhanced || { echo "Failed to swap nano for vim-enhanced"; exit 1; }
+    dnf -y install dnf-automatic \
+                   dconf-editor gnome-tweaks gnome-extensions-app gnome-shell-extension-no-overview \
+                   nss-mdns avahi-tools || { echo "Failed to install required packages"; exit 1; }
+}
+
+install_packages
+
+# Install Google Chrome
+dnf -y install google-chrome-stable || { echo "Failed to install Google Chrome"; exit 1; }
+
+# Set vim as default editor by adding to /etc/profile.d/vim.sh
+echo -e 'export VISUAL=vim\nexport EDITOR=vim' > /etc/profile.d/vim.sh
+chmod +x /etc/profile.d/vim.sh || { echo "Failed to set vim as default editor"; exit 1; }
 
 # Enable timers
 systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
@@ -106,12 +102,12 @@ fi
 groupadd -f _ssh || { echo "Failed to create _ssh group"; exit 1; }
 usermod -aG _ssh nick || { echo "Failed to add 'nick' to _ssh group"; exit 1; }
 
-# Create .ssh directory for nick user if it doesn't exist
-if [ ! -d /home/nick/.ssh ]; then
-    mkdir -p /home/nick/.ssh || { echo "Failed to create .ssh directory for nick"; exit 1; }
-    chmod 700 /home/nick/.ssh || { echo "Failed to set permissions for .ssh directory"; exit 1; }
-    chown nick:nick /home/nick/.ssh || { echo "Failed to set ownership for .ssh directory"; exit 1; }
-fi
+# Configure mDNS with authselect
+# Modify the hosts line in /etc/authselect/user-nsswitch.conf
+sed -i '/^hosts:/c\hosts:      files mdns [NOTFOUND=return] dns myhostname' /etc/authselect/user-nsswitch.conf
+
+# Apply the changes
+authselect apply-changes
 
 : <<'EOF'
 # Configure mDNS with authselect
