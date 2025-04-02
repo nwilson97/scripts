@@ -8,38 +8,61 @@ exec > >(tee -a "$LOGFILE") 2>&1
 
 echo "Starting appliance setup..."
 
-# Download all necessary files
-CONFIG_REPO="https://raw.githubusercontent.com/nwilson97/config-files/main"
+# Define the function to download and configure necessary files
+download_config_files() {
+    # Define the configuration repository
+    local CONFIG_REPO="https://raw.githubusercontent.com/nwilson97/config-files/main"
 
-download_file() {
-    local DEST="$1"
-    local URL="$2"
-    local DIR
-    DIR=$(dirname "$DEST")
+    # Ensure the target directory exists and download the file
+    download_and_set_permissions() {
+        local DEST_DIR="$1"
+        local FILENAME="$2"
+        local OWNER="$3"
+        local PERMS="$4"
 
-    mkdir -p "$DIR"  # Ensure target directory exists
+        # Ensure target directory exists
+        mkdir -p "$DEST_DIR"
 
-    wget --tries=3 --timeout=10 -O "$DEST" "$URL" || {
-        echo "Failed to download $DEST from $URL"
-        exit 1
+        # Download the file into the target directory, keeping its original name
+        wget --tries=3 --timeout=10 -P "$DEST_DIR" "$CONFIG_REPO/$FILENAME" || {
+            echo "Failed to download $CONFIG_REPO/$FILENAME to $DEST_DIR"
+            exit 1
+        }
+
+        local DEST="${DEST_DIR%/}/$FILENAME"  # Prevent double slashes
+
+        # Set ownership if specified
+        if [[ -n "$OWNER" ]]; then
+            chown "$OWNER" "$DEST" || { echo "Failed to set ownership for $DEST"; exit 1; }
+        fi
+
+        # Set permissions if specified
+        if [[ -n "$PERMS" ]]; then
+            chmod "$PERMS" "$DEST" || { echo "Failed to set permissions for $DEST"; exit 1; }
+        fi
     }
+
+    # List of files (format: "directory filename owner permissions")
+    local FILES_TO_DOWNLOAD=(
+        "/etc/yum.repos.d google-chrome.repo"
+        "/etc mdns.allow"
+        "/etc/dconf/db/local.d 00-extensions"
+        "/etc/dconf/db/local.d 00-gnome-settings"
+        "/etc/systemd/system poweroff-at-9pm.timer"
+        "/etc/systemd/system poweroff-at-9pm.service"
+        "/etc/ssh/sshd_config.d sshd_secure.conf"
+        "/home/nick/.ssh authorized_keys nick:nick 600"
+        "/home/nick .vimrc nick:nick"
+    )
+
+    # Loop through the list and call the function for each file
+    for entry in "${FILES_TO_DOWNLOAD[@]}"; do
+        download_and_set_permissions $entry
+    done
 }
 
-# List of files to download
-download_file "/etc/yum.repos.d/google-chrome.repo" "$CONFIG_REPO/google-chrome.repo"
-download_file "/etc/mdns.allow" "$CONFIG_REPO/mdns.allow"
-download_file "/etc/dconf/db/local.d/00-extensions" "$CONFIG_REPO/00-extensions"
-download_file "/etc/dconf/db/local.d/00-gnome-settings" "$CONFIG_REPO/00-gnome-settings"
-download_file "/etc/systemd/system/poweroff-at-9pm.timer" "$CONFIG_REPO/poweroff-at-9pm.timer"
-download_file "/etc/systemd/system/poweroff-at-9pm.service" "$CONFIG_REPO/poweroff-at-9pm.service"
-download_file "/etc/ssh/sshd_config.d/sshd_secure.conf" "$CONFIG_REPO/sshd_secure.conf"
-download_file "/home/nick/.ssh/authorized_keys" "$CONFIG_REPO/authorized_keys"
-download_file "/home/nick/.vimrc" "$CONFIG_REPO/.vimrc"
-
-# Set ownership and permisisons for files downloaded to nick home
-chown -R nick:nick /home/nick/.ssh/ || { echo "Failed to set ownership for .ssh directory"; exit 1; }
-chmod 600 /home/nick/.ssh/authorized_keys || { echo "Failed to set permissions for authorized_keys"; exit 1; }
-chown nick:nick /home/nick/.vimrc || { echo "Failed to set ownership for .ssh directory"; exit 1; }
+# Call the function
+download_config_files
 
 # Install packages
 install_packages() {
