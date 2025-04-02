@@ -85,10 +85,6 @@ if [ -f /usr/share/applications/google-chrome.desktop ]; then
     sed -i '/^Exec=/{s|$| --incognito --start-fullscreen "ows.openeye.net/login"|}' "$SKEL_DIR/.config/autostart/google-chrome.desktop" || { echo "Failed to modify desktop entry"; exit 1; }
 fi
 
-# Suppress Google Chrome first run pop-up
-mkdir -p "$SKEL_DIR/.config/google-chrome"
-touch "$SKEL_DIR/.config/google-chrome/First\ Run"
-
 # Ensure proper permissions for /etc/skel
 chmod -R o+rX "$SKEL_DIR/.config" || { echo "Failed to set permissions for /etc/skel"; exit 1; }
 
