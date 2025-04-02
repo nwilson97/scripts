@@ -64,21 +64,31 @@ download_config_files() {
 # Call the function
 download_config_files
 
-# Install packages
+# Function to install packages and Google Chrome
 install_packages() {
+    # Enable CRB repository
     dnf config-manager --set-enabled crb
+
+    # Install EPEL and necessary releases
     dnf -y install epel-release epel-next-release || { echo "Failed to install epel-release"; exit 1; }
+
+    # Upgrade system
     dnf --refresh -y upgrade || { echo "Failed to upgrade system"; exit 1; }
+
+    # Swap nano for vim-enhanced
     dnf -y swap nano vim-enhanced || { echo "Failed to swap nano for vim-enhanced"; exit 1; }
+
+    # Install required packages
     dnf -y install dnf-automatic \
                    dconf-editor gnome-tweaks gnome-extensions-app gnome-shell-extension-no-overview \
                    nss-mdns avahi-tools || { echo "Failed to install required packages"; exit 1; }
+
+    # Install Google Chrome
+    dnf -y install google-chrome-stable || { echo "Failed to install Google Chrome"; exit 1; }
 }
 
+# Call the function to install packages
 install_packages
-
-# Install Google Chrome
-dnf -y install google-chrome-stable || { echo "Failed to install Google Chrome"; exit 1; }
 
 # Set vim as default editor by adding to /etc/profile.d/vim.sh
 echo -e 'export VISUAL=vim\nexport EDITOR=vim' > /etc/profile.d/vim.sh
