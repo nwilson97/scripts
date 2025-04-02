@@ -80,9 +80,6 @@ install_packages
 # Install Google Chrome
 dnf -y install google-chrome-stable || { echo "Failed to install Google Chrome"; exit 1; }
 
-# Enforce shell extension no-overveiew for all users
-dconf update
-
 # Set vim as default editor by adding to /etc/profile.d/vim.sh
 echo -e 'export VISUAL=vim\nexport EDITOR=vim' > /etc/profile.d/vim.sh
 chmod +x /etc/profile.d/vim.sh || { echo "Failed to set vim as default editor"; exit 1; }
