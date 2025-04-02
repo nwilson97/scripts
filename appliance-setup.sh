@@ -149,8 +149,15 @@ authselect apply-changes
 firewall-cmd --set-default-zone=home || { echo "Failed to set default firewall zone"; exit 1; }
 firewall-cmd --runtime-to-permanent || { echo "Failed to apply firewall changes"; exit 1; }
 
-# Set hostname and restart Avahi
-hostnamectl set-hostname centos-appliance || { echo "Failed to set hostname"; exit 1; }
+# Prompt for a hostname
+echo "Please enter the hostname for the system:"
+read hostname
+
+# Set the hostname
+hostnamectl hostname "$hostname" || { echo "Failed to set hostname"; exit 1; }
+echo "Hostname has been set to: $hostname"
+
+# Restart Avahi
 systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
 
 echo "Appliance setup complete."
