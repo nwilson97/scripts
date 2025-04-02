@@ -153,8 +153,23 @@ firewall-cmd --runtime-to-permanent || { echo "Failed to apply firewall changes"
 echo "Please enter the hostname for the system:"
 read hostname
 
+# Validate if the input is empty
+if [ -z "$hostname" ]; then
+    echo "Hostname cannot be empty. Please enter a valid hostname."
+    exit 1
+fi
+
+# Confirm with the user
+echo "You have entered the hostname: $hostname"
+read -p "Is this correct? (y/n): " confirmation
+if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
+    echo "Hostname change canceled."
+    exit 1
+fi
+
 # Set the hostname
-hostnamectl hostname "$hostname" || { echo "Failed to set hostname"; exit 1; }
+hostnamectl hostname "$hostname"
+
 echo "Hostname has been set to: $hostname"
 
 # Restart Avahi
