@@ -182,30 +182,34 @@ authselect apply-changes
 firewall-cmd --set-default-zone=home || { echo "Failed to set default firewall zone"; exit 1; }
 firewall-cmd --runtime-to-permanent || { echo "Failed to apply firewall changes"; exit 1; }
 
-# Prompt for a hostname
-echo "Please enter the hostname for the system:"
-read hostname
+# Function to set the system's hostname
+set_system_hostname() {
+    echo "Please enter the hostname for the system:"
+    read hostname
 
-# Validate if the input is empty
-if [ -z "$hostname" ]; then
-    echo "Hostname cannot be empty. Please enter a valid hostname."
-    exit 1
-fi
+    # Validate if the input is empty
+    if [ -z "$hostname" ]; then
+        echo "Hostname cannot be empty. Please enter a valid hostname."
+        exit 1
+    fi
 
-# Confirm with the user
-echo "You have entered the hostname: $hostname"
-read -p "Is this correct? (y/n): " confirmation
-if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
-    echo "Hostname change canceled."
-    exit 1
-fi
+    echo "You have entered the hostname: $hostname"
+    read -p "Is this correct? (y/n): " confirmation
+    if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
+        echo "Hostname change canceled."
+        exit 1
+    fi
 
-# Set the hostname
-hostnamectl hostname "$hostname"
+    # Set the hostname
+    hostnamectl hostname "$hostname" || { echo "Failed to set hostname."; exit 1; }
 
-echo "Hostname has been set to: $hostname"
+    echo "Hostname has been set to: $hostname"
 
-# Restart Avahi
-systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
+    # Restart Avahi
+    systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
+}
+
+# Call the function to set the hostname
+set_system_hostname
 
 echo "Appliance setup complete. Please reboot the system."
