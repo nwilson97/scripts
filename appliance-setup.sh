@@ -122,7 +122,8 @@ REPO_NAME="private-config-files"
 DEST_PATH="/home/kiosk/"
 
 # Use curl to download the file using GitHub API with the PAT for authentication
-curl -u "$GITHUB_USER:$GITHUB_TOKEN" --output-dir "$DEST_PATH" -O "https://raw.githubusercontent.com/$GITHUB_USER/$REPO_NAME/main/OWS-{Login,Recorders}.automa.json"
+curl -u "$GITHUB_USER:$GITHUB_TOKEN" --output-dir "$DEST_PATH" -O "https://raw.githubusercontent.com/$GITHUB_USER/$REPO_NAME/main/OWS-Recorders.automa.json"
+curl -u "$GITHUB_USER:$GITHUB_TOKEN" --output-dir "$DEST_PATH" -O "https://raw.githubusercontent.com/$GITHUB_USER/$REPO_NAME/main/OWS-Login.automa.json"
 
 # Set ownership of downloaded files
 chown kiosk:kiosk /home/kiosk/OWS*
