@@ -116,14 +116,12 @@ if ! id kiosk &>/dev/null; then
 fi
 
 # Replace with your GitHub username and repository details
-GITHUB_USER="nwilson97"
-GITHUB_TOKEN="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"  # Store this securely
-REPO_NAME="private-config-files"
+CONFIG_REPO="https://raw.githubusercontent.com/nwilson97/config-files/main"
 DEST_PATH="/home/kiosk/"
 
 # Use curl to download the file using GitHub API with the PAT for authentication
-curl -u "$GITHUB_USER:$GITHUB_TOKEN" --output-dir "$DEST_PATH" -O "https://raw.githubusercontent.com/$GITHUB_USER/$REPO_NAME/main/OWS-Recorders.automa.json"
-curl -u "$GITHUB_USER:$GITHUB_TOKEN" --output-dir "$DEST_PATH" -O "https://raw.githubusercontent.com/$GITHUB_USER/$REPO_NAME/main/OWS-Login.automa.json"
+curl --output-dir "$DEST_PATH" -O "$CONFIG_REPO/OWS-Recorders.automa.json"
+curl --output-dir "$DEST_PATH" -O "$CONFIG_REPO/OWS-Login.automa.json"
 
 # Set ownership of downloaded files
 chown kiosk:kiosk /home/kiosk/OWS*
