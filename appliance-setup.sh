@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -uo pipefail
+set -o pipefail
 set -x
 
 LOGFILE="/home/nick/appliance-setup.log"
