@@ -115,16 +115,49 @@ if ! id kiosk &>/dev/null; then
     passwd -d kiosk || { echo "Failed to delete kiosk user password"; exit 1; }
 fi
 
-# Replace with your GitHub username and repository details
-CONFIG_REPO="https://raw.githubusercontent.com/nwilson97/config-files/main"
-DEST_PATH="/home/kiosk/"
+# Define the function to download and configure the necessary files
+download_kiosk_config_files() {
+    # Define the configuration repository
+    local CONFIG_REPO="https://raw.githubusercontent.com/nwilson97/config-files/main"
 
-# Use curl to download the file using GitHub API with the PAT for authentication
-curl --output-dir "$DEST_PATH" -O "$CONFIG_REPO/OWS-Recorders.automa.json"
-curl --output-dir "$DEST_PATH" -O "$CONFIG_REPO/OWS-Login.automa.json"
+    # Function to download the file and set ownership
+    download_and_set_ownership() {
+        local DEST_DIR="$1"
+        local FILENAME="$2"
+        local OWNER="$3"
 
-# Set ownership of downloaded files
-chown kiosk:kiosk /home/kiosk/OWS*
+        # Ensure the target directory exists
+        mkdir -p "$DEST_DIR"
+
+        # Download the file into the target directory
+        wget --tries=3 --timeout=10 -P "$DEST_DIR" "$CONFIG_REPO/$FILENAME" || {
+            echo "Failed to download $FILENAME"
+            exit 1
+        }
+
+        # Set ownership of the downloaded file
+        chown "$OWNER" "$DEST_DIR/$FILENAME" || {
+            echo "Failed to set ownership for $DEST_DIR/$FILENAME"
+            exit 1
+        }
+    }
+
+    # List of files (format: "directory filename owner")
+    local FILES_TO_DOWNLOAD=(
+        "/home/kiosk OWS-Recorders.automa.json kiosk:kiosk"
+        "/home/kiosk OWS-Login.automa.json kiosk:kiosk"
+    )
+
+    # Loop through the list and call the function for each file
+    for entry in "${FILES_TO_DOWNLOAD[@]}"; do
+        # Split the entry into directory, filename, and owner
+        IFS=" " read -r DEST_DIR FILENAME OWNER <<< "$entry"
+        download_and_set_ownership "$DEST_DIR" "$FILENAME" "$OWNER"
+    done
+}
+
+# Call the function to download and configure necessary files
+download_kiosk_config_files
 
 # Set 'kiosk' as the auto-login user for GDM
 GDM_CONF="/etc/gdm/custom.conf"
