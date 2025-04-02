@@ -29,6 +29,7 @@ download_file() {
 download_file "/etc/yum.repos.d/google-chrome.repo" "$CONFIG_REPO/google-chrome.repo"
 download_file "/etc/mdns.allow" "$CONFIG_REPO/mdns.allow"
 download_file "/etc/dconf/db/local.d/00-extensions" "$CONFIG_REPO/00-extensions"
+download_file "/etc/dconf/db/local.d/00-gnome-settings" "$CONFIG_REPO/00-gnome-settings"
 download_file "/etc/systemd/system/poweroff-at-9pm.timer" "$CONFIG_REPO/poweroff-at-9pm.timer"
 download_file "/etc/systemd/system/poweroff-at-9pm.service" "$CONFIG_REPO/poweroff-at-9pm.service"
 download_file "/etc/ssh/sshd_config.d/sshd_secure.conf" "$CONFIG_REPO/sshd_secure.conf"
