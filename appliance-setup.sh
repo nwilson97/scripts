@@ -115,6 +115,17 @@ if ! id kiosk &>/dev/null; then
     passwd -d kiosk || { echo "Failed to delete kiosk user password"; exit 1; }
 fi
 
+# Replace with your GitHub username and repository details
+CONFIG_REPO="https://raw.githubusercontent.com/nwilson97/config-files/main"
+DEST_PATH="/home/kiosk/"
+
+# Use curl to download the file using GitHub API with the PAT for authentication
+curl --output-dir "$DEST_PATH" -O "$CONFIG_REPO/OWS-Recorders.automa.json"
+curl --output-dir "$DEST_PATH" -O "$CONFIG_REPO/OWS-Login.automa.json"
+
+# Set ownership of downloaded files
+chown kiosk:kiosk /home/kiosk/OWS*
+
 # Set 'kiosk' as the auto-login user for GDM
 GDM_CONF="/etc/gdm/custom.conf"
 if grep -q "^\[daemon\]" "$GDM_CONF"; then
@@ -133,24 +144,6 @@ sed -i '/^hosts:/c\hosts:      files mdns [NOTFOUND=return] dns myhostname' /etc
 
 # Apply the changes
 authselect apply-changes
-
-: <<'EOF'
-# Configure mDNS with authselect
-configure_mdns() {
-    if authselect check &>/dev/null; then
-        authselect enable-feature with-mdns4 || return 1
-        authselect enable-feature with-mdns6 || return 1
-        authselect apply-changes || return 1
-    else
-        echo "Authselect is not available or not functioning correctly." >&2
-        return 1
-    fi
-}
-
-if ! configure_mdns; then
-    echo "mDNS configuration failed"; exit 1
-fi
-EOF
 
 # Change firewall zone to home
 firewall-cmd --set-default-zone=home || { echo "Failed to set default firewall zone"; exit 1; }
