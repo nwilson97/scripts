@@ -160,4 +160,4 @@ echo "Hostname has been set to: $hostname"
 # Restart Avahi
 systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
 
-echo "Appliance setup complete."
+echo "Appliance setup complete. Please reboot the system"
