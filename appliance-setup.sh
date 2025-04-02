@@ -31,17 +31,14 @@ download_file "/etc/mdns.allow" "$CONFIG_REPO/mdns.allow"
 download_file "/etc/dconf/db/local.d/00-extensions" "$CONFIG_REPO/00-extensions"
 download_file "/etc/systemd/system/poweroff-at-9pm.timer" "$CONFIG_REPO/poweroff-at-9pm.timer"
 download_file "/etc/systemd/system/poweroff-at-9pm.service" "$CONFIG_REPO/poweroff-at-9pm.service"
-download_file "/home/nick/.vimrc" "$CONFIG_REPO/.vimrc"
 download_file "/etc/ssh/sshd_config.d/sshd_secure.conf" "$CONFIG_REPO/sshd_secure.conf"
 download_file "/home/nick/.ssh/authorized_keys" "$CONFIG_REPO/authorized_keys"
+download_file "/home/nick/.vimrc" "$CONFIG_REPO/.vimrc"
 
-: <<'EOF'
-# Set permissions and ownership for downloaded files
-chmod 644 /etc/systemd/system/poweroff-at-9pm.* || { echo "Failed to set permissions for poweroff timer"; exit 1; }
-chown root:root /etc/systemd/system/poweroff-at-9pm.* || { echo "Failed to set ownership for poweroff timer"; exit 1; }
-EOF
+# Set ownership and permisisons for files downloaded to nick home
+chown -R nick:nick /home/nick/.ssh/ || { echo "Failed to set ownership for .ssh directory"; exit 1; }
 chmod 600 /home/nick/.ssh/authorized_keys || { echo "Failed to set permissions for authorized_keys"; exit 1; }
-chown -R nick:nick /home/nick/.ssh || { echo "Failed to set ownership for .ssh directory"; exit 1; }
+chown nick:nick /home/nick/.vimrc || { echo "Failed to set ownership for .ssh directory"; exit 1; }
 
 # Install packages
 install_packages() {
@@ -65,6 +62,9 @@ dconf update
 # Set vim as default editor by adding to /etc/profile.d/vim.sh
 echo -e 'export VISUAL=vim\nexport EDITOR=vim' > /etc/profile.d/vim.sh
 chmod +x /etc/profile.d/vim.sh || { echo "Failed to set vim as default editor"; exit 1; }
+
+# Configure dnf automatic to apply updates
+sed -i 's/^apply_updates = no/apply_updates = yes/' /etc/dnf/automatic.conf
 
 # Enable timers
 systemctl daemon-reload || { echo "Failed to reload systemd daemon"; exit 1; }
