@@ -7,7 +7,7 @@ echo "Starting appliance setup..."
 
 # Prompt for hostname at the beginning
 echo "Please enter the hostname for the system:"
-read NEW_HOSTNAME
+read -r NEW_HOSTNAME
 
 # Validate input (empty check)
 if [ -z "$NEW_HOSTNAME" ]; then
@@ -17,7 +17,7 @@ fi
 
 # Confirm with the user
 echo "You have entered the hostname: $NEW_HOSTNAME"
-read -p "Is this correct? (y/n): " CONFIRMATION
+read -r -p "Is this correct? (y/n): " CONFIRMATION
 if [[ ! "$CONFIRMATION" =~ ^[Yy]$ ]]; then
     echo "Hostname change canceled."
     exit 1
@@ -81,7 +81,7 @@ download_config_files() {
 
     # Loop through the list and call the function for each file
     for entry in "${FILES_TO_DOWNLOAD[@]}"; do
-        download_and_set_permissions $entry
+        download_and_set_permissions "$entry"
     done
 }
 
@@ -223,7 +223,7 @@ apply_hostname
 echo "Appliance setup complete. Please reboot the system."
 
 # Prompt user for reboot
-read -p "Would you like to reboot now? (y/n): " REBOOT_CONFIRM
+read -r -p "Would you like to reboot now? (y/n): " REBOOT_CONFIRM
 if [[ "$REBOOT_CONFIRM" =~ ^[Yy]$ ]]; then
     echo "Rebooting now..."
     systemctl reboot
