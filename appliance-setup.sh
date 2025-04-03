@@ -1,8 +1,5 @@
 #!/bin/bash
 
-set -o pipefail
-set -x
-
 LOGFILE="/home/nick/appliance-setup.log"
 exec > >(tee -a "$LOGFILE") 2>&1
 
