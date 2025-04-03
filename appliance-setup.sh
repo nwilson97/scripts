@@ -8,6 +8,33 @@ exec > >(tee -a "$LOGFILE") 2>&1
 
 echo "Starting appliance setup..."
 
+# Prompt for hostname at the beginning
+echo "Please enter the hostname for the system:"
+read NEW_HOSTNAME
+
+# Validate input (empty check)
+if [ -z "$NEW_HOSTNAME" ]; then
+    echo "Hostname cannot be empty. Exiting."
+    exit 1
+fi
+
+# Confirm with the user
+echo "You have entered the hostname: $NEW_HOSTNAME"
+read -p "Is this correct? (y/n): " CONFIRMATION
+if [[ ! "$CONFIRMATION" =~ ^[Yy]$ ]]; then
+    echo "Hostname change canceled."
+    exit 1
+fi
+
+# Function to apply the hostname (but not run it yet)
+apply_hostname() {
+    hostnamectl hostname "$NEW_HOSTNAME" || { echo "Failed to set hostname."; exit 1; }
+    echo "Hostname has been set to: $NEW_HOSTNAME"
+    
+    # Restart Avahi (if needed)
+    systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
+}
+
 # Define the function to download and configure necessary files
 download_config_files() {
     # Define the configuration repository
@@ -192,34 +219,17 @@ authselect apply-changes
 firewall-cmd --set-default-zone=home || { echo "Failed to set default firewall zone"; exit 1; }
 firewall-cmd --runtime-to-permanent || { echo "Failed to apply firewall changes"; exit 1; }
 
-# Function to set the system's hostname
-set_system_hostname() {
-    echo "Please enter the hostname for the system:"
-    read hostname
-
-    # Validate if the input is empty
-    if [ -z "$hostname" ]; then
-        echo "Hostname cannot be empty. Please enter a valid hostname."
-        exit 1
-    fi
-
-    echo "You have entered the hostname: $hostname"
-    read -p "Is this correct? (y/n): " confirmation
-    if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
-        echo "Hostname change canceled."
-        exit 1
-    fi
-
-    # Set the hostname
-    hostnamectl hostname "$hostname" || { echo "Failed to set hostname."; exit 1; }
-
-    echo "Hostname has been set to: $hostname"
-
-    # Restart Avahi
-    systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
-}
-
 # Call the function to set the hostname
-set_system_hostname
+apply_hostname
 
+# Final message
 echo "Appliance setup complete. Please reboot the system."
+
+# Prompt user for reboot
+read -p "Would you like to reboot now? (y/n): " REBOOT_CONFIRM
+if [[ "$REBOOT_CONFIRM" =~ ^[Yy]$ ]]; then
+    echo "Rebooting now..."
+    systemctl reboot
+else
+    echo "Reboot skipped. Please remember to reboot later."
+fi
