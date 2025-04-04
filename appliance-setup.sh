@@ -32,42 +32,53 @@ apply_hostname() {
     systemctl restart avahi-daemon || { echo "Failed to restart avahi-daemon"; exit 1; }
 }
 
-# Define the function to download and configure necessary files
 download_config_files() {
-    # Define the configuration repository
     local CONFIG_REPO="https://raw.githubusercontent.com/nwilson97/config-files/main"
 
-    # Ensure the target directory exists and download the file
-    download_and_set_permissions() {
-        local DEST_DIR="$1"
-        local FILENAME="$2"
-        local OWNER="$3"
-        local PERMS="$4"
+    # Create a temporary directory
+    local TMP_DIR
+    TMP_DIR="$(mktemp -d)" || { echo "Failed to create temporary directory"; exit 1; }
 
-        # Ensure target directory exists
-        mkdir -p "$DEST_DIR"
+    # Export TMP_DIR so it can be used later in the script
+    export CONFIG_TMP_DIR="$TMP_DIR"
 
-        # Download the file into the target directory, keeping its original name
-        wget --tries=3 --timeout=10 -P "$DEST_DIR" "$CONFIG_REPO/$FILENAME" || {
-            echo "Failed to download $CONFIG_REPO/$FILENAME to $DEST_DIR"
-            exit 1
-        }
+    echo "Downloading config files to $CONFIG_TMP_DIR"
 
-        local DEST="${DEST_DIR%/}/$FILENAME"  # Prevent double slashes
-
-        # Set ownership if specified
-        if [[ -n "$OWNER" ]]; then
-            chown "$OWNER" "$DEST" || { echo "Failed to set ownership for $DEST"; exit 1; }
-        fi
-
-        # Set permissions if specified
-        if [[ -n "$PERMS" ]]; then
-            chmod "$PERMS" "$DEST" || { echo "Failed to set permissions for $DEST"; exit 1; }
-        fi
-    }
-
-    # List of files (format: "directory filename owner permissions")
+    # List of filenames to download (paths relative to the repo root)
     local FILES_TO_DOWNLOAD=(
+        "google-chrome.repo"
+        "mdns.allow"
+        "00-extensions"
+        "00-gnome-settings"
+        "poweroff-at-9pm.timer"
+        "poweroff-at-9pm.service"
+        "sshd_secure.conf"
+        "authorized_keys"
+        ".vimrc"
+    )
+
+    # Change to the temporary directory before downloading
+    pushd "$CONFIG_TMP_DIR" > /dev/null || exit 1
+
+    for filename in "${FILES_TO_DOWNLOAD[@]}"; do
+        local url="$CONFIG_REPO/$filename"
+
+        # Download the file using curl -O equivalent behavior
+        if ! curl --fail --location --silent --show-error --remote-name "$url"; then
+            echo "Failed to download $url"
+            exit 1
+        fi
+    done
+
+    popd > /dev/null
+}
+
+# Call the function
+download_config_files
+
+install_config_files() {
+    # List of files to install (format: "directory filename owner permissions")
+    local FILES_TO_INSTALL=(
         "/etc/yum.repos.d google-chrome.repo"
         "/etc mdns.allow"
         "/etc/dconf/db/local.d 00-extensions"
@@ -79,14 +90,39 @@ download_config_files() {
         "/home/nick .vimrc nick:nick"
     )
 
-    # Loop through the list and call the function for each file
-    for entry in "${FILES_TO_DOWNLOAD[@]}"; do
-        download_and_set_permissions "$entry"
+    for entry in "${FILES_TO_INSTALL[@]}"; do
+        # Split the entry into components
+        local DEST_DIR FILENAME OWNER PERMS
+        read -r DEST_DIR FILENAME OWNER PERMS <<< "$entry"
+
+        local SRC_FILE="$CONFIG_TMP_DIR/$FILENAME"
+        local DEST_PATH="${DEST_DIR%/}/$FILENAME"
+
+        # Ensure the destination directory exists
+        mkdir -p "$DEST_DIR" || { echo "Failed to create directory $DEST_DIR"; exit 1; }
+
+        # Move the file into place
+        if [[ -f "$SRC_FILE" ]]; then
+            mv "$SRC_FILE" "$DEST_PATH" || { echo "Failed to move $SRC_FILE to $DEST_PATH"; exit 1; }
+        else
+            echo "Missing expected file: $SRC_FILE"
+            exit 1
+        fi
+
+        # Set ownership if specified
+        if [[ -n "$OWNER" ]]; then
+            chown "$OWNER" "$DEST_PATH" || { echo "Failed to chown $DEST_PATH to $OWNER"; exit 1; }
+        fi
+
+        # Set permissions if specified
+        if [[ -n "$PERMS" ]]; then
+            chmod "$PERMS" "$DEST_PATH" || { echo "Failed to chmod $DEST_PATH to $PERMS"; exit 1; }
+        fi
     done
 }
 
 # Call the function
-download_config_files
+install_config_files
 
 # Function to install packages and Google Chrome
 install_packages() {
