@@ -70,7 +70,7 @@ download_config_files() {
         fi
     done
 
-    popd > /dev/null
+    popd > /dev/null || exit 1
 }
 
 # Call the function
